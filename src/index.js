@@ -15,12 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
     pokemonContainer.innerHTML = data.map(function(pokemon) {
       return `
         <div class="pokemon-card">
-        <div class="pokemon-frame">
+        <div class="pokemon-frame" id="card-${pokemon.id}">
           <button class="delete-button" data-id="${pokemon.id}">X</button>
           <h1 class="center-text">${pokemon.name}</h1>
           <div class="pokemon-image">
             <img data-id="${pokemon.id}" data-action="flip" class="toggle-sprite" src="${pokemon.sprites.front}">
           </div>
+          <button class="edit-button" data-type="edit" data-id="${pokemon.id}">edit</button>
         </div>
       </div>
       `
@@ -44,6 +45,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
       deletePokemon(event.target.dataset.id);
     }
+    if(event.target.dataset.type === "edit"){
+      renderEditPokemonForm(event.target.dataset.id);
+    }
+    if(event.target.dataset.type === "edit-sbmt"){
+      event.preventDefault();
+  
+      updatedPokeId = event.target.dataset.id
+      updatedPoke ={
+        name: event.srcElement.form[0].value,
+        
+        sprites: {
+          front: event.srcElement.form[1].value,
+          back: event.srcElement.form[2].value
+        }
+      }
+   
+      updatePokemon(updatedPokeId, updatedPoke);
+      
+
+    }
+
     
   })
 
@@ -53,12 +75,16 @@ document.addEventListener('DOMContentLoaded', () => {
   })
   newPokemonForm.addEventListener('submit', e => {
     e.preventDefault();
+    let newPoke={
+      name: e.target[0].value,
+      sprites:{
+        front: e.target[1].value,
+        back: e.target[2].value
+      }
+    }
+   
 
-    pokeName = e.target[0].value
-    pokeFront = e.target[1].value
-    pokeBack = e.target[2].value
-
-    createPokemon(pokeName, pokeFront, pokeBack)
+    createPokemon(newPoke)
 
   })
 
@@ -82,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     displayPokemon(pokemonArray)
   });
 
-  function createPokemon(name, front, back){
+  function createPokemon(newPoke){
     fetch('http://localhost:3000/pokemon', {
       method: 'POST', // *GET, POST, PUT, DELETE, etc.
      
@@ -92,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
           // 'Content-Type': 'application/x-www-form-urlencoded',
       },
   
-      body: JSON.stringify({name: name, sprites:{front: front, back: back}}),
+      body: JSON.stringify(newPoke),
          // body data type must match "Content-Type" header
   })
   .then(response => response.json())
@@ -105,9 +131,9 @@ document.addEventListener('DOMContentLoaded', () => {
     displayPokemon(pokemonArray);
   }); // parses JSON response into native Javascript objects 
 
-}
+  }
 
-function deletePokemon(id){
+  function deletePokemon(id){
 
   
     return fetch('http://localhost:3000/pokemon' + '/' + id, {
@@ -128,7 +154,47 @@ function deletePokemon(id){
     
     
   
-}
+  }
+
+  function renderEditPokemonForm(id){
+
+    let pokeCard = document.querySelector(`#card-${id}`)
+    pokeCard.innerHTML += `
+    <form class="form" id="edit-pokemon-form" class="" action="index.html" method="patch">
+   <label for="name">NAME: </label>
+   <input id="edit-poke-name" type="text" name="name" value=""> <br>
+   <label for="front-sprite">Front Image: </label>
+   <input id="edit-poke-front-sprite" type="text" name="front-sprite" value=""><br>
+   <label for="back-sprite">Back Sprite: </label>
+   <input id="edit-poke-back-sprite" type="text" name="back-sprite" value="">
+   <button type="submit" data-id ="${id} "data-type="edit-sbmt">Edit That Pokemon!</button>
+</form>
+    `
+
+  }
+
+  function updatePokemon(id, updatedPoke){
+    fetch(`http://localhost:3000/pokemon/${id}`, {
+      method: 'PATCH', // *GET, POST, PUT, DELETE, etc.
+     
+      headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          // 'Content-Type': 'application/x-www-form-urlencoded',
+      },
+  
+      body: JSON.stringify(updatedPoke),
+         // body data type must match "Content-Type" header
+  })
+    updateIndex = pokemonArray.findIndex( pokemon => pokemon.id == id)
+    pokemonArray[updateIndex] = updatedPoke;
+
+    displayPokemon(pokemonArray)
+  
+    
+  };
+
+  
 
   
 
